@@ -1,4 +1,4 @@
-# social-app 
+# finance-app 
 ## API Reference
 
 #### root uri
