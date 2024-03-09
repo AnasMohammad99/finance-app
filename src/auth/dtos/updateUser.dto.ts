@@ -2,6 +2,7 @@
 import {
   IsEmail,
   IsNotEmpty,
+  IsNumber,
   IsOptional,
   IsString,
   MaxLength,
@@ -23,12 +24,16 @@ export class UpdateUserDto {
   @IsOptional()
   @IsNotEmpty()
   username: string;
-
+  @IsString()
+  @IsOptional()
+  phoneNumber: string;
   @IsNotEmpty()
   @IsEmail()
   @IsOptional()
   email: string;
-
+  @IsNumber()
+  @IsOptional()
+  balance: number;
   @IsNotEmpty()
   @IsOptional()
   @IsString()

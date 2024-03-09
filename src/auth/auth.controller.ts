@@ -7,6 +7,7 @@ import {
   Body,
   Param,
   Delete,
+  Get,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport/dist';
 import { JwtAuthGuard } from 'src/jwtAuthGuard';
@@ -24,9 +25,14 @@ export class AuthController {
   async login(@Req() req) {
     return this.authService.login(req.user);
   }
-  @Post('client/register')
+  @Post('register')
   clientRegister(@Body() createUserDto: CreateUserDto) {
     return this.authService.clientRegister(createUserDto);
+  }
+  @UseGuards(JwtAuthGuard)
+  @Get('myaccount')
+  getAccount(@Req() req) {
+    return this.authService.getAccount(req);
   }
   @UseGuards(JwtAuthGuard)
   @Post('logout')

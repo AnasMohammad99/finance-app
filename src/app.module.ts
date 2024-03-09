@@ -5,7 +5,7 @@ import { DatabaseModule } from './database/database.module';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { PostModule } from './post/post.module';
+import { TransactionModule } from './transaction/transaction.module';
 @Module({
   imports: [
     AuthModule,
@@ -17,12 +17,12 @@ import { PostModule } from './post/post.module';
           user: process.env.HOST_EMAIL,
           pass: process.env.HOST_EMAIL_PASSWORD,
         },
-        tls:{
-          rejectUnauthorized: false
-        }
+        tls: {
+          rejectUnauthorized: false,
+        },
       },
     }),
-    PostModule,
+    TransactionModule,
   ],
 
   controllers: [AppController],

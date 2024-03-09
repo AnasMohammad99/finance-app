@@ -1,7 +1,10 @@
 /* eslint-disable prettier/prettier */
 import {
   IsEmail,
+  IsEnum,
   IsNotEmpty,
+  IsNumber,
+  IsOptional,
   IsString,
   MaxLength,
   MinLength,
@@ -17,6 +20,10 @@ const passwordRequirement: PasswordValidationRequirement = {
   mustContainSpecialCharacter: true,
   mustContainUpperLetter: true,
 };
+export enum Role {
+  ADMIN,
+  USER
+}
 export class CreateUserDto {
   @MinLength(3)
   @IsNotEmpty()
@@ -25,7 +32,9 @@ export class CreateUserDto {
   @IsNotEmpty()
   @IsEmail()
   email: string;
-
+  @IsNumber()
+  @IsOptional()
+  balance: number;
   @IsNotEmpty()
   @IsString()
   @MinLength(6)
@@ -35,4 +44,7 @@ export class CreateUserDto {
   @IsString()
   @IsNotEmpty()
   phoneNumber: string;
+  @IsNotEmpty()
+  @IsEnum(Role)
+  role: any;
 }

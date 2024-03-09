@@ -21,8 +21,8 @@ export class AuthService {
   }
   async validateUser(email: string, password: string) {
     try {
-      const user = await this.database.users.findFirst({
-        where: { OR: [{ email }] },
+      const user = await this.database.user.findFirst({
+        where: { email },
       });
       if (user) {
         const isMatch = await bcrypt.compare(password, user.password);
@@ -42,13 +42,15 @@ export class AuthService {
           id,
         },
       });
+      // console.log(token);
+      
       return token;
     } catch (err) {
       return err;
     }
   }
   async clientRegister(userDto: CreateUserDto) {
-    const userExist = await this.database.users.findFirst({
+    const userExist = await this.database.user.findFirst({
       where: {
         OR: [{ email: userDto.email }, { phoneNumber: userDto.phoneNumber }],
       },
@@ -58,23 +60,15 @@ export class AuthService {
     }
     const saltOrRounds = 10;
     userDto.password = await bcrypt.hash(userDto.password, saltOrRounds);
-    const user = await this.database.users.create({
+    const user = await this.database.user.create({
       data: userDto,
-    });
-    const token = await this.database.tokens.create({
-      data: {
-        userId: user.id,
-        expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24),
-      },
     });
     return {
       ...user,
-      access_token: this.jwtService.sign({
-        user: { userId: user.id,  tokenId: token.id },
-      }),
       message: 'user has been created successfully',
     };
   }
+  //-------------------------------------------
   async login(user: any): Promise<any> {
     try {
       const token = await this.database.tokens.create({
@@ -83,13 +77,12 @@ export class AuthService {
           expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24),
         },
       });
-      delete user.id;
       delete user.password;
       return {
         message: 'loged in successfully',
         ...user,
         access_token: this.jwtService.sign({
-          user: { userId: user.id, role: user.role, tokenId: token.id },
+          user: { user_id: user.id, token_id: token.id, role: user.role },
         }),
       };
     } catch (err) {
@@ -100,7 +93,7 @@ export class AuthService {
   }
   async updateUser(id: number, updateUserDto: UpdateUserDto) {
     try {
-      const user = await this.database.users.findUnique({
+      const user = await this.database.user.findUnique({
         where: {
           id,
         },
@@ -108,7 +101,7 @@ export class AuthService {
       if (!user) {
         throw new HttpException("user doesn't exist", HttpStatus.BAD_REQUEST);
       }
-      const updatedUser = await this.database.users.update({
+      const updatedUser = await this.database.user.update({
         where: { id },
         data: updateUserDto,
       });
@@ -118,11 +111,30 @@ export class AuthService {
       return err;
     }
   }
+  async getAccount(req) {
+    try {
+      const user = await this.database.user.findUnique({
+        where: {
+          id: req.user.user_id,
+        },
+        include: {
+          sends: true,
+          recives: true
+        }
+      });   
+      delete user.password
+      delete user.id
+      delete user.emailVerification         
+      return { user };
+    } catch (err) {
+      throw new HttpException(err, HttpStatus.BAD_REQUEST);
+    }
+  }
   async logout(req) {
     try {
       await this.database.tokens.delete({
         where: {
-          id: req.user.tokenId,
+          id: req.user.token_id,
         },
       });
       return { message: 'loged out successfully' };
@@ -132,22 +144,12 @@ export class AuthService {
   }
   async deleteAccount(request){
     try {
-      await this.database.like.deleteMany({
+      await this.database.transaction.deleteMany({
         where: {
-          user_id:request.user.tokenId,
-        },
-      });
-      await this.database.comment.deleteMany({
-        where: {
-          user_id:request.user.tokenId,
-        },
-      });
-      await this.database.posts.deleteMany({
-        where: {
-          user_id:request.user.tokenId,
-        },
-      });
-      const deletedAccount = await this.database.users.delete({
+          sender_id: request.user.token_id
+        }
+      })
+      const deletedAccount = await this.database.user.delete({
         where:{
           id:request.user.tokenId
         }
@@ -160,7 +162,7 @@ export class AuthService {
   }
   async verifyEmail(verifyEmail: verifyEmailDto) {
     try {
-      const user = await this.database.users.findUnique({
+      const user = await this.database.user.findUnique({
         where: { email: verifyEmail.email },
       });
       if (!user) {
@@ -179,7 +181,7 @@ export class AuthService {
           expiresIn: 60 * 15,
         },
       );
-      await this.database.users.update({
+      await this.database.user.update({
         where: { email: verifyEmail.email },
         data: {
           emailVerification: token,
@@ -200,13 +202,12 @@ export class AuthService {
       throw new HttpException(err, HttpStatus.BAD_REQUEST);
     }
   }
-
   async verifyResetPassword(
     verifyEmail: verifyEmailDto,
     token: string,
   ) {
     try {
-      const user = await this.database.users.findUnique({
+      const user = await this.database.user.findUnique({
         where: { email: verifyEmail.email },
       });
       const secret = process.env.ACCESS_SECRET;
@@ -226,7 +227,7 @@ export class AuthService {
   }
   async resetPassword(resetPasswordDto: ResetPasswordDto, token: string) {
     try {
-      const user = await this.database.users.findFirst({
+      const user = await this.database.user.findFirst({
         where: { email: resetPasswordDto.email },
       });
       const secret = process.env.ACCESS_SECRET;
@@ -244,7 +245,7 @@ export class AuthService {
         resetPasswordDto.password,
         saltOrRounds,
       );
-      const updatedUser = await this.database.users.update({
+      const updatedUser = await this.database.user.update({
         where: { email: resetPasswordDto.email },
         data: {
           password: resetPasswordDto.password,
@@ -256,9 +257,7 @@ export class AuthService {
       throw new HttpException(err, HttpStatus.BAD_REQUEST);
     }
   }
-
-
-  @Cron(CronExpression.EVERY_HOUR)
+  @Cron(CronExpression.EVERY_5_MINUTES)
   async deleteExpiredTokens() {
     try {
       console.log('Checking for expired tokens...');

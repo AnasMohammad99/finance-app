@@ -9,54 +9,53 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+generator erd {
+  provider = "prisma-erd-generator"
+  theme = "forest"
+}
 
-model Users {
+
+
+enum Role {
+  ADMIN
+  USER
+}
+model User {
   id                      Int         @id @default(autoincrement())
   username                String
   email                   String      @unique
   password                String
+  balance                 Float       @default(0.0)
   phoneNumber             String      @unique
   emailVerification       String?
+  role                    Role        @default(USER)
   ////////////////////////////////
   tokens                  tokens[]
-  posts                   Posts[]
-  likes                   Like[]
-  comments                Comment[]
+  sends                   Transaction[] @relation("sender")
+  recives                 Transaction[] @relation("reciver")
 }
-
-model Posts {
+model Transaction {
   id                      Int         @id @default(autoincrement())
-  user_id                 Int         
-  description             String
-  file                    Json?
+  sender_id               Int
+  reciver_id              Int
+  amount                  Float
+  notes                   String?
+  // transaction_type        TransactionType
+  created_at              DateTime    @default(now())
   //////////////////////////////
-  like                    Like[]
-  comments                Comment[]
-  user                    Users      @relation(fields: [user_id], references: [id]) 
-}
-model Comment {
-  id                      Int         @id @default(autoincrement())
-  post_id                 Int         
-  user_id                 Int       
-  description             String
-  /////////////////////////////
-  post                    Posts       @relation(fields: [post_id], references: [id])
-  user                    Users       @relation(fields: [user_id], references: [id]) 
-}
-model Like {
-  id                      Int         @id @default(autoincrement())
-  post_id                 Int         
-  user_id                 Int
-  /////////////////////////////
-  @@unique(fields: [post_id, user_id], name: "userLikeId")
-  post                    Posts       @relation(fields: [post_id], references: [id])
-  user                    Users       @relation(fields: [user_id], references: [id]) 
+  sender                  User      @relation("sender",fields: [sender_id], references: [id]) 
+  reciver                 User      @relation("reciver",fields: [reciver_id], references: [id]) 
 }
 
 model tokens {
   id                      Int         @id @default(autoincrement())
   userId                  Int         @unique
   expiresAt               DateTime
-  user                    Users       @relation(fields: [userId], references: [id])
+  user                    User       @relation(fields: [userId], references: [id])
 }
 
+
+// enum TransactionType {
+//   SENDER
+//   RECIVER
+// }
