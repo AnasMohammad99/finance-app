@@ -1,4 +1,4 @@
-# social-app 
+# finance-app 
 ## API Reference
 
 #### root uri
@@ -16,7 +16,7 @@
 | `username`     | `string` | **Required** |
 | `password`     | `string` | **Required** must contain character, special character, more than 8 leters|
 | `phoneNumber`  | `string` | **Required** **Unique**|
-| `username`     | `string` | **Required** |
+| `role`         | `string` | **Optional** choose between "USER" or "ADMIN" default "USER" |
 
 ### Response 
 | Body Parameter | Type     | 
@@ -25,6 +25,7 @@
 | `username`     | `string` | 
 | `message`      | `string` | 
 | `phoneNumber`  | `string` |
+| `role`  | `string` |
 ----------------------------------------------------------------
 #### login user
 ```http
