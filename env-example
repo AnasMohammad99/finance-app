@@ -1,0 +1,6 @@
+DATABASE_URL="postgresql://<postgres-username>:<postgres-password>@localhost:5432/bank-api?schema=public"
+ACCESS_SECRET="secret"
+PORT = 5000
+EMAIL_SERVICE = 'outlook'
+HOST_EMAIL = 'ammamasz.basha@hotmail.com'
+HOST_EMAIL_PASSWORD = 'An#01115821265'
